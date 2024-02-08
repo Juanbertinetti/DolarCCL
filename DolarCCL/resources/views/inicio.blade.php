@@ -8,15 +8,15 @@
             <tbody>
             <tr>
                 <td>Fecha de actualizacion</td>
-                <td></td>
+                <td>{{$fechaModificacion}}</td>
             </tr>
             <tr>
                 <td>Compra</td>
-                <td></td>
+                <td>{{$compra}}</td>
             </tr>
             <tr>
                 <td>Venta</td>
-                <td></td>
+                <td>{{$venta}}</td>
             </tr>
             </tbody>
         </table>
