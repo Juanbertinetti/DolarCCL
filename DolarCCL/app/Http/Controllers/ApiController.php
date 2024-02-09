@@ -4,6 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Google\Cloud\BigQuery\BigQueryClient;
+use Google\Cloud\BigQuery\Dataset;
+use Google\Cloud\BigQuery\Table;
+use Google\Cloud\BigQuery\QueryResults;
+
 
 class ApiController extends Controller
 {
@@ -48,27 +53,41 @@ class ApiController extends Controller
         $bigQuery = new BigQueryController($credentialsPath, $projectId, $dataset, $table);
 
         $data = [
-            ['data' => [
-                'indicador_financiero' => "CCL-Venta",
-                'valor' => $venta,
-                'fecha_act' => Carbon::now()->timestamp,
-                'fecha_dato' => $fechaModificacion,
-            ]],
-            ['data' => [
-                'indicador_financiero' => "CCL-Compra",
-                'valor' => $compra,
-                'fecha_act' => Carbon::now()->timestamp,
-                'fecha_dato' => $fechaModificacion,
-            ]]
+            [
+                'data' => [
+                    'indicador_financiero' => "CCL-Venta",
+                    'valor' => $venta,
+                    'fecha_act' => Carbon::now()->timestamp,
+                    'fecha_dato' => $fechaModificacion,
+                ]
+            ],
+            [
+                'data' => [
+                    'indicador_financiero' => "CCL-Compra",
+                    'valor' => $compra,
+                    'fecha_act' => Carbon::now()->timestamp,
+                    'fecha_dato' => $fechaModificacion,
+                ]
+            ]
         ];
 
-        $bigQuery->insertarFilaTable($data);
+        $insertadasCorrectamente = $bigQuery->insertarFilaTable($data)['success'];
 
-        return redirect('/dolar/bigQuery/index')
-            ->with([
-               'css' => 'success',
-               'mensaje' => 'Se ha enviado la actualizacion',
-            ]);
+        if($insertadasCorrectamente){
+            return redirect('/dolar/bigQuery/index')
+                ->with([
+                    'css' => 'success',
+                    'mensaje' => 'Se ha enviado la actualizacion',
+                ]);
+        } else {
+            return redirect('/dolar/bigQuery/index')
+                ->with([
+                    'css' => 'danger',
+                    'mensaje' => 'No se pudo enviar la actualizacion',
+                ]);
+        }
+
+
     }
 
 
@@ -80,9 +99,7 @@ class ApiController extends Controller
         $table = 'data_financiera';
 
         $bigQuery = new BigQueryController($credentialsPath, $projectId, $dataset, $table);
-
         $results = $bigQuery->obtenerRegistrosTable()->rows();
-
         $dolarArray = $this->obtenerCotizacion();
 
         return view('dolarBigQuery', [
@@ -167,4 +184,80 @@ class ApiController extends Controller
         return json_decode($dolarData, true);
     }
 
+    public function conectarBigQuery()
+    {
+        $credentialsPath = __DIR__ . '/../../../googleCloud.json';
+        $projectId = 'bigquerytp3d';
+        $dataset = 'control_precios';
+        $table = 'data_financiera';
+
+        $client = new BigQueryClient([
+            'proyectId' => $projectId,
+            'keyFilePath' => $credentialsPath,
+        ]);
+
+        $dataset = $client->dataset($dataset);
+        $table = $dataset->table($table);
+
+        $query = $client->query(
+            'SELECT * FROM `bigquerytp3d.control_precios.data_financiera` ORDER BY fecha_act DESC LIMIT 1000'
+        );
+
+        $results = $client->runQuery($query);
+
+        foreach($results->rows() as $row)
+        {
+            echo $row['indicador_financiero'] . "<br>";
+        }
+    }
+
+    public function updateBigQuery()
+    {
+        $credentialsPath = __DIR__ . '/../../../googleCloud.json';
+        $projectId = 'bigquerytp3d';
+        $dataset = 'control_precios';
+        $table = 'data_financiera';
+
+        $client = new BigQueryClient([
+            'proyectId' => $projectId,
+            'keyFilePath' => $credentialsPath,
+        ]);
+
+        $dataset = $client->dataset($dataset);
+        $table = $dataset->table($table);
+
+        $dolarArray = obtenerCotizacion();
+
+        $data = [
+            [
+                'data' => [
+                    'indicador_financiero' => "CCL-Venta",
+                    'valor' => $dolarArray['venta'],
+                    'fecha_act' => Carbon::now()->timestamp,
+                    'fecha_dato' => $dolarArray['fechaModificacion'],
+                ]
+            ],
+            [
+                'data' => [
+                    'indicador_financiero' => "CCL-Compra",
+                    'valor' => $dolarArray['compra'],
+                    'fecha_act' => Carbon::now()->timestamp,
+                    'fecha_dato' => $dolarArray['fechaModificacion'],
+                ]
+            ]
+        ];
+
+        try {
+            $response = $table->insertRows($data);
+            return [
+                'success' => true,
+                'data' => $response,
+            ];
+        } catch (Throwable $th) {
+            return [
+                'success' => false,
+                'data' => $th->getMessage(),
+            ];
+        }
+    }
 }
