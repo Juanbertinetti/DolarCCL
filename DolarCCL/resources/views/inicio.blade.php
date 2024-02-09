@@ -1,8 +1,10 @@
 @extends('layouts.plantilla')
 @section('contenido')
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <h1>Cotizacion Dolar CCL</h1>
-
+    <div class="d-flex justify-content-between">
+        <h1>Cotizacion Dolar CCL</h1>
+        <a class="btn btn-primary" href="/dolar/bigQuery/index">VISTA BIGQUERY</a>
+    </div>
     <div class="container mt-5">
         <table class="table">
             <tbody>

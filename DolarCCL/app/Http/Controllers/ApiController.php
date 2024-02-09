@@ -10,38 +10,86 @@ class ApiController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
      */
     public function index()
     {
-        //
-        // Obtener datos de la API
-        $dolarData = file_get_contents("https://dolarapi.com/v1/dolares/contadoconliqui");
+        $dolarArray = $this->obtenerCotizacion();
 
-        // Decodificar el JSON en un array asociativo
-        $dolarArray = json_decode($dolarData, true);
+        // Acceder a la información necesaria
+        $compra = $dolarArray['compra'];
+        $venta = $dolarArray['venta'];
 
-        // Verificar si la decodificación fue exitosa y si la clave 'fechaActualizacion' existe
-        if ($dolarArray && isset($dolarArray['compra'], $dolarArray['venta'], $dolarArray['fechaActualizacion'])) {
-            // Acceder a la información necesaria
-            $compra = $dolarArray['compra'];
-            $venta = $dolarArray['venta'];
+        // Obtener la fecha de actualización en formato Carbon con UTC-0
+        $fechaModificacionUTC = Carbon::parse($dolarArray['fechaActualizacion'], 'UTC');
 
-            // Obtener la fecha de actualización en formato Carbon con UTC-0
-            $fechaModificacionUTC = Carbon::parse($dolarArray['fechaActualizacion'], 'UTC');
+        // Ajustar el huso horario a UTC-3
+        $fechaModificacion = $fechaModificacionUTC->setTimezone('America/Argentina/Buenos_Aires');
 
-            // Ajustar el huso horario a UTC-3
-            $fechaModificacion = $fechaModificacionUTC->setTimezone('America/Argentina/Buenos_Aires');
+        return view('inicio' , [
+            'compra' => $compra,
+            'venta' => $venta,
+            'fechaModificacion' => $fechaModificacion,
+        ]);
+    }
 
-            return view('inicio' , compact('compra', 'venta', 'fechaModificacion'));
-        } else {
-            // Manejar el caso en que la decodificación falle o la clave no exista
-            return null;
-        }
+    public function updateBigQuery(Request $request)
+    {
+        $venta = $request->venta;
+        $compra = $request->compra;
+        $fechaModificacion = $request->fechaActualizacion;
 
+        ////////////////////
+        /// CONEXION CON BIGQUERY
+        $credentialsPath = __DIR__ . '/../../../googleCloud.json';
+        $projectId = 'bigquerytp3d';
+        $dataset = 'control_precios';
+        $table = 'data_financiera';
+
+        $bigQuery = new BigQueryController($credentialsPath, $projectId, $dataset, $table);
+
+        $data = [
+            ['data' => [
+                'indicador_financiero' => "CCL-Venta",
+                'valor' => $venta,
+                'fecha_act' => Carbon::now()->timestamp,
+                'fecha_dato' => $fechaModificacion,
+            ]],
+            ['data' => [
+                'indicador_financiero' => "CCL-Compra",
+                'valor' => $compra,
+                'fecha_act' => Carbon::now()->timestamp,
+                'fecha_dato' => $fechaModificacion,
+            ]]
+        ];
+
+        $bigQuery->insertarFilaTable($data);
+
+        return redirect('/dolar/bigQuery/index')
+            ->with([
+               'css' => 'success',
+               'mensaje' => 'Se ha enviado la actualizacion',
+            ]);
     }
 
 
+    public function indexBigQuery()
+    {
+        $credentialsPath = __DIR__ . '/../../../googleCloud.json';
+        $projectId = 'bigquerytp3d';
+        $dataset = 'control_precios';
+        $table = 'data_financiera';
+
+        $bigQuery = new BigQueryController($credentialsPath, $projectId, $dataset, $table);
+
+        $results = $bigQuery->obtenerRegistrosTable()->rows();
+
+        $dolarArray = $this->obtenerCotizacion();
+
+        return view('dolarBigQuery', [
+            'rows' => $results,
+            'dolarArray' => $dolarArray,
+        ]);
+    }
     /**
      * Show the form for creating a new resource.
      *
@@ -107,4 +155,16 @@ class ApiController extends Controller
     {
         //
     }
+
+    private function obtenerCotizacion() : array
+    {
+        // Obtener datos de la API
+        $dolarData = file_get_contents("https://dolarapi.com/v1/dolares/contadoconliqui");
+
+        // Decodificar el JSON en un array asociativo
+
+        // AGREGAR VALIDACION
+        return json_decode($dolarData, true);
+    }
+
 }

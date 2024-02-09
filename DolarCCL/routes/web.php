@@ -24,3 +24,7 @@ Route::get('/', function () {
 });*/
 
 Route::get('/inicio', [ ApiController::class, 'index' ]);
+
+Route::get('/dolar/bigQuery/index', [ ApiController::class, 'indexBigQuery' ]);
+
+Route::put('/dolar/bigQuery/update', [ ApiController::class, 'updateBigQuery' ]);
