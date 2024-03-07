@@ -30,3 +30,5 @@ Route::get('/inicio/prueba', [ ApiController::class, 'conectarBigQuery' ]);
 Route::get('/dolar/bigQuery/index', [ ApiController::class, 'indexBigQuery' ]);
 
 Route::put('/dolar/bigQuery/update', [ ApiController::class, 'updateBigQuery' ]);
+
+Route::put('/dolar/cotizacion_ccl/update' , [\App\Http\Controllers\LogBQController::class, 'store']);

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LogBQ;
+use GPBMetadata\Google\Api\Log;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Google\Cloud\BigQuery\BigQueryClient;
@@ -74,7 +77,7 @@ class ApiController extends Controller
      */
     public function store(Request $request)
     {
-        //
+
     }
 
     /**
@@ -166,6 +169,7 @@ class ApiController extends Controller
             $compra = $request->compra;
             $fechaModificacion = $request->fechaActualizacion;
 
+
             ////////////////////
             /// CONEXION CON BIGQUERY
             $credentialsPath = __DIR__ . '/../../../googleCloud.json';
@@ -212,4 +216,63 @@ class ApiController extends Controller
 
 
         }
+
+    public function updateMySQL(Request $request)
+    {
+        $venta = $request->venta;
+        $compra = $request->compra;
+        $fechaModificacion = $request->fechaActualizacion;
+
+        // Conexión con MySQL
+        // Obtener credenciales de MySQL desde el archivo .env
+        $mysqlCredentials = [
+            'host' => env('DB_HOST'),
+            'port' => env('DB_PORT'),
+            'database' => env('DB_DATABASE'),
+            'username' => env('DB_USERNAME'),
+            'password' => env('DB_PASSWORD'),
+        ];
+
+        // Configurar la conexión a MySQL
+        config(['database.connections.mysql' => $mysqlCredentials]);
+
+        $data = [
+            [
+                'data' => [
+                    'indicador_financiero' => "CCL-Venta",
+                    'valor' => $venta,
+                    'fecha_act' => Carbon::now()->timestamp,
+                    'fecha_dato' => $fechaModificacion,
+                ]
+            ],
+            [
+                'data' => [
+                    'indicador_financiero' => "CCL-Compra",
+                    'valor' => $compra,
+                    'fecha_act' => Carbon::now()->timestamp,
+                    'fecha_dato' => $fechaModificacion,
+                ]
+            ]
+        ];
+
+        // Asumiendo que $this->table contiene el nombre de la tabla en MySQL
+        //$insertadascorrectamente = LogBQController::insertarFilaTable($data)['success'];
+            //LogBQController::table($this->table)->insert($data);
+
+//        if ($insertadascorrectamente) {
+//            return redirect('/dolar/bigQuery/index')
+//                ->with([
+//                    'css' => 'success',
+//                    'mensaje' => 'Se ha enviado la actualización a MySQL',
+//                ]);
+//        } else {
+//            return redirect('/dolar/bigQuery/index')
+//                ->with([
+//                    'css' => 'danger',
+//                    'mensaje' => 'No se pudo enviar la actualización a MySQL',
+//                ]);
+//        }
+    }
+
+
 }

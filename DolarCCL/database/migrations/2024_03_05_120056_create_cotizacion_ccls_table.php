@@ -13,9 +13,14 @@ return new class extends Migration
      */
     public function up() : void
     {
-
+        Schema::create('cotizacion_ccl', function (Blueprint $table) {
+            $table->mediumIncrements('id');
+            $table->string('indicador_financiero');
+            $table->decimal('valor');
+            $table->timestamp('fecha_act');
+            $table->dateTime('fecha_dato');
+        });
     }
-
 
     /**
      * Reverse the migrations.
@@ -24,6 +29,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('log_b_q_s');
+        Schema::dropIfExists('cotizacion_ccls');
     }
 };
