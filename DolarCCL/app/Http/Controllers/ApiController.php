@@ -163,13 +163,33 @@ class ApiController extends Controller
         }
     }
 
-        public function updateBigQuery(Request $request)
+    public function updateBigQuery(Request $request)
+    {
+        $venta = $request->venta;
+        $compra = $request->compra;
+        $fechaModificacion = $request->fechaActualizacion;
+
+        $insertadasCorrectamente = $this->updateBigQueryTask($venta, $compra, $fechaModificacion);
+
+        if($insertadasCorrectamente){
+            return redirect('/dolar/bigQuery/index')
+                ->with([
+                    'css' => 'success',
+                    'mensaje' => 'Se ha enviado la actualizacion',
+                ]);
+        } else {
+            return redirect('/dolar/bigQuery/index')
+                ->with([
+                    'css' => 'danger',
+                    'mensaje' => 'No se pudo enviar la actualizacion',
+                ]);
+        }
+
+    }
+
+    // FUNCIONES INTERNAS
+        public function updateBigQueryTask($venta, $compra, $fechaModificacion) : bool
         {
-            $venta = $request->venta;
-            $compra = $request->compra;
-            $fechaModificacion = $request->fechaActualizacion;
-
-
             ////////////////////
             /// CONEXION CON BIGQUERY
             $credentialsPath = __DIR__ . '/../../../googleCloud.json';
@@ -198,23 +218,7 @@ class ApiController extends Controller
                 ]
             ];
 
-            $insertadasCorrectamente = $bigQuery->insertarFilaTable($data)['success'];
-
-            if($insertadasCorrectamente){
-                return redirect('/dolar/bigQuery/index')
-                    ->with([
-                        'css' => 'success',
-                        'mensaje' => 'Se ha enviado la actualizacion',
-                    ]);
-            } else {
-                return redirect('/dolar/bigQuery/index')
-                    ->with([
-                        'css' => 'danger',
-                        'mensaje' => 'No se pudo enviar la actualizacion',
-                    ]);
-            }
-
-
+            return $bigQuery->insertarFilaTable($data)['success'];
         }
 
     public function updateMySQL(Request $request)

@@ -1,0 +1,31 @@
+PASOS PARA CREAR UN SCHEDULE JOB / COMMAND (LARAVEL):
+
+
+1) php artisan make:command NombreDelProcesoTask (importante poner Task al final)
+
+2) Rellenar el comando: App/Console/Commands
+    A) signature -> nombre del comando
+    B) description
+    C) handle -> logica del comando
+        Tener en cuenta hacer un manejo de errores, y dejar un registro de las veces que falle.
+        Tener en cuenta que esto se ejecuta en 2do plano
+
+3) Rellenar el archivo Kernel : App/Console/Kernel.php
+    Tienen que completar el metodo schedule
+    $schedule->command('ApiController:actualizarBigQuery')->everyFiveMinutes();
+    $schedule->command('ApiController:actualizarBigQuery')->everyFiveMinutes()->withoutOverlapping();
+
+    Aca definen la frecuencia.
+
+
+Comandos utiles y necesarios:
+
+php artisan schedule:list 
+
+php artisan schedule:work (para que realmente se ejecute, deja la consola tomada)
+
+
+
+PARA EL SERVIDOR EN DEPLOY:
+https://laravel.com/docs/9.x/queues#supervisor-configuration
+http://supervisord.org/index.html
