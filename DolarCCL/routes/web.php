@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\LogBQController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiController;
 
@@ -32,4 +31,4 @@ Route::get('/dolar/bigQuery/index', [ ApiController::class, 'indexBigQuery' ]);
 
 Route::put('/dolar/bigQuery/update', [ ApiController::class, 'updateBigQuery' ]);
 
-Route::get('/dolar/log/update', [ LogBQController::class, 'insertarDatosDesdeBigQuery']);
+Route::put('/dolar/cotizacion_ccl/update' , [\App\Http\Controllers\LogBQController::class, 'store']);

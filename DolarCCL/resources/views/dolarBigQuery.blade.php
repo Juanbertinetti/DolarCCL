@@ -4,7 +4,16 @@
     <div class="d-flex justify-content-between">
         <h1>Cotizacion Dolar CCL</h1>
         <a class="btn btn-primary" href="/inicio">Cotizacion Actual</a>
-        <a class="btn btn-primary" href="/dolar/log/update">Actualizar BD Local</a>
+
+        <form action="/dolar/cotizacion_ccl/update" method="post">
+            @csrf
+            @method('put')
+            <input type="hidden" name="compra" value="{{ $dolarArray['compra'] }}">
+            <input type="hidden" name="venta" value="{{ $dolarArray['venta'] }}">
+            <input type="hidden" name="fechaActualizacion" value="{{ $dolarArray['fechaActualizacion'] }}">
+            <button type="submit" class="btn btn-primary">Actualizar DB local</button>
+        </form>
+
         <form action="/dolar/bigQuery/update" method="post">
             @csrf
             @method('put')

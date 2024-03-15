@@ -8,6 +8,7 @@
         "php": "^8.0.2",
         "google/cloud-bigquery": "^1.29",
         "guzzlehttp/guzzle": "^7.8",
+        "illuminate/database": "*",
         "laravel/framework": "^9.19",
         "laravel/sanctum": "^3.0",
         "laravel/tinker": "^2.7"
