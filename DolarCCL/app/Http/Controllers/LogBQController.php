@@ -75,7 +75,7 @@ class LogBQController extends Controller
                     'css' => 'success'
                 ]);
         } catch (\Throwable $th) {
-
+            dd($th);
             return redirect('/dolar/bigQuery/index')
                 ->with([
                     'mensaje' => 'No se pudieron agregar los registros.',

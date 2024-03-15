@@ -11,6 +11,8 @@ use Google\Cloud\BigQuery\BigQueryClient;
 use Google\Cloud\BigQuery\Dataset;
 use Google\Cloud\BigQuery\Table;
 use Google\Cloud\BigQuery\QueryResults;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Http\JsonResponse;
 
 
 class ApiController extends Controller
@@ -21,7 +23,7 @@ class ApiController extends Controller
      */
     public function index()
     {
-        $dolarArray = $this->obtenerCotizacion();
+            $dolarArray = $this->obtenerCotizacion();
 
         // Acceder a la información necesaria
         $compra = $dolarArray['compra'];
@@ -41,8 +43,6 @@ class ApiController extends Controller
     }
 
 
-
-
     public function indexBigQuery()
     {
         $credentialsPath = __DIR__ . '/../../../googleCloud.json';
@@ -59,6 +59,7 @@ class ApiController extends Controller
             'dolarArray' => $dolarArray,
         ]);
     }
+
     /**
      * Show the form for creating a new resource.
      *
@@ -72,7 +73,7 @@ class ApiController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
@@ -83,7 +84,7 @@ class ApiController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
@@ -94,7 +95,7 @@ class ApiController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function edit($id)
@@ -105,8 +106,8 @@ class ApiController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
@@ -117,7 +118,7 @@ class ApiController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
@@ -125,15 +126,22 @@ class ApiController extends Controller
         //
     }
 
-    public function obtenerCotizacion() : array
+    public function obtenerCotizacion()
     {
-        // Obtener datos de la API
-        $dolarData = file_get_contents("https://dolarapi.com/v1/dolares/contadoconliqui");
+        try {
+            // Obtener datos de la API
+            $response = Http::get("https://dolarapi.com/v1/dolares/contadoconliqui");
 
-        // Decodificar el JSON en un array asociativo
+            // Verificar si la respuesta es exitosa
+            if ($response->successful()) {
+                // Decodificar el JSON en un array asociativo
+                return $response->json();
+            }
+        } catch (\Throwable $e) {
+            // Lanzar una excepción si no se puede obtener la cotización
+            throw new \Exception('No se pudo realizar la consulta a DolarApi');
+        }
 
-        // AGREGAR VALIDACION
-        return json_decode($dolarData, true);
     }
 
     public function conectarBigQuery()
@@ -170,6 +178,25 @@ class ApiController extends Controller
             $fechaModificacion = $request->fechaActualizacion;
 
 
+            $insertadasCorrectamente = $this->UpdateBigQueryTask($venta,$compra,$fechaModificacion);
+
+            if($insertadasCorrectamente){
+                return redirect('/dolar/bigQuery/index')
+                    ->with([
+                        'css' => 'success',
+                        'mensaje' => 'Se ha enviado la actualizacion',
+                    ]);
+            } else {
+                return redirect('/dolar/bigQuery/index')
+                    ->with([
+                        'css' => 'danger',
+                        'mensaje' => 'No se pudo enviar la actualizacion',
+                    ]);
+            }
+        }
+
+        public function UpdateBigQueryTask($venta,$compra,$fechaModificacion) :bool
+        {
             ////////////////////
             /// CONEXION CON BIGQUERY
             $credentialsPath = __DIR__ . '/../../../googleCloud.json';
@@ -197,24 +224,8 @@ class ApiController extends Controller
                     ]
                 ]
             ];
-
-            $insertadasCorrectamente = $bigQuery->insertarFilaTable($data)['success'];
-
-            if($insertadasCorrectamente){
-                return redirect('/dolar/bigQuery/index')
-                    ->with([
-                        'css' => 'success',
-                        'mensaje' => 'Se ha enviado la actualizacion',
-                    ]);
-            } else {
-                return redirect('/dolar/bigQuery/index')
-                    ->with([
-                        'css' => 'danger',
-                        'mensaje' => 'No se pudo enviar la actualizacion',
-                    ]);
-            }
+            return $bigQuery->insertarFilaTable($data)['success'];
         }
-
     public function updateMySQL(Request $request)
     {
         $venta = $request->venta;
