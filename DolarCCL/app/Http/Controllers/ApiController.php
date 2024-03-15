@@ -209,7 +209,5 @@ class ApiController extends Controller
                         'mensaje' => 'No se pudo enviar la actualizacion',
                     ]);
             }
-
-
         }
 }

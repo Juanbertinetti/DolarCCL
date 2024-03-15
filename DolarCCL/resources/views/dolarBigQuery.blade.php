@@ -4,6 +4,7 @@
     <div class="d-flex justify-content-between">
         <h1>Cotizacion Dolar CCL</h1>
         <a class="btn btn-primary" href="/inicio">Cotizacion Actual</a>
+        <a class="btn btn-primary" href="/dolar/log/update">Actualizar BD Local</a>
         <form action="/dolar/bigQuery/update" method="post">
             @csrf
             @method('put')
